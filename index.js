@@ -23,6 +23,7 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
 
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
+
 async function run() {
     try {
       await client.connect();
@@ -36,6 +37,17 @@ async function run() {
 
           
 
+     
+       // Add New Car to Data base //
+       app.post("/games",async(req,res)=>{
+
+        const product=req.body;
+
+        const result=await servicesCollection.insertOne(product);
+  
+        res.send(result)
+    })
+
       //  Store Purchase Data ///
       app.post('/orders',async(req,res)=>{
            const order=req.body;
@@ -43,18 +55,19 @@ async function run() {
            const result=await purchaseCollection.insertOne(order);
 res.send(result)
       });
-       // get all Orders //
-
-       app.get("/orders",async (req,res)=>{
-
-        const cursor= purchaseCollection.find({});
-        const result =await cursor.toArray()
-        res.json(result)
-      })
 
 
 
-       
+        // POst Ratings By users //
+        app.post('/reviews',async(req,res)=>{
+
+          const data=req.body;
+          
+
+          const result =await ratingsCollection.insertOne(data);
+
+          res.send(result)
+        })
                     // Store Users ///
 
 
@@ -70,11 +83,56 @@ res.send(result)
 
       //  Get Admins ///
 
-    
+      app.get('/user/admin/:email', async(req,res)=>{
 
- 
+         const email= req.params.email;
+          let isAdmin=false
+         const query={email:email}
+         const user=await UsersCollection.findOne(query);
+
+         if(user?.role==="admin"){
+           isAdmin=true
+
+         }
+
+         res.json({admin : isAdmin})
+      })
+
+        //  delete order as Admin ///
+
+        app.delete("/orders/:id",async(req,res)=>{
+
+          const id=req.params.id;
+
+          const query={_id: Objectid(id)}
+       
+          const result=await purchaseCollection.deleteOne(query);
+
+          res.send(result)
+      });
+
+      //  change pending to active //
+      app.put("/orders/:id",async(req,res)=>{
+        const id=req.params.id;
+      
+      
+      const updateUser=req.body;
+    
+       const filter={_id: Objectid(id)}
+       const options = { upsert: false };
+       const updateDoc = {
+        $set: {
+          status: `Shipped`
+        },
+      };
+
+      const result= await purchaseCollection.updateMany(filter,updateDoc,options)
+     
+
 
       
+       res.json(result)
+    })
 
       //  update Admin ROle ///
 
@@ -115,6 +173,29 @@ res.send(result)
       })
 
 
+
+
+            //  Delete Products ///
+
+            app.delete('/cars/:carId',async(req,res)=>{
+            
+
+              const id=req.params.carId;
+             
+              const query={_id: Objectid(id)}
+              const result = await servicesCollection.deleteOne(query);
+              res.send(result)
+
+            })
+         //  Delete User Purchase //
+
+         app.delete("/order/:email",async(req,res)=>{
+          const id=req.params.email
+
+          const query={_id: Objectid(id)}
+          const result = await purchaseCollection.deleteOne(query);
+          res.send(result)
+       })
                 
                   // get Ratings ///
 
@@ -127,9 +208,30 @@ res.send(result)
                     
                   })
 
+            //  Get User Orders //
+
+            app.get("/order/:email",async(req,res)=>{
+               const userEmail=req.params.email;
+
+               const query = {email: userEmail};
+               const cursor= purchaseCollection.find(query);
+               const result=await cursor.toArray()
+               res.json(result);
+            })
 
 
-      // GEt All games ///
+         
+      // Get All USers //
+
+      app.get('/users',async(req,res)=>{
+
+        const cursor =UsersCollection.find({});
+
+          const result=await cursor.toArray()
+
+          res.json(result)
+      })
+      // GEt All Cars ///
                 
          app.get('/games',async(req,res)=>{
             const cursor=servicesCollection.find({});
@@ -139,7 +241,14 @@ res.send(result)
         res.json(result)
       })
 
+      // get all Orders //
 
+      app.get("/orders",async (req,res)=>{
+
+        const cursor= purchaseCollection.find({});
+        const result =await cursor.toArray()
+        res.json(result)
+      })
     } finally {
       // Ensures that the client will close when you finish/error
     //   await client.close();
