@@ -226,7 +226,6 @@ res.send(result)
       app.get('/users',async(req,res)=>{
 
         const cursor =UsersCollection.find({});
-
           const result=await cursor.toArray()
 
           res.json(result)
