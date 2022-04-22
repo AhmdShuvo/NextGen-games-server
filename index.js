@@ -110,6 +110,16 @@ res.send(result)
 
           res.send(result)
       });
+        app.delete("/games/:id",async(req,res)=>{
+
+          const id=req.params.id;
+
+          const query={_id: Objectid(id)}
+       
+          const result=await servicesCollection.deleteOne(query);
+
+          res.send(result)
+      });
 
       //  change pending to active //
       app.put("/orders/:id",async(req,res)=>{
